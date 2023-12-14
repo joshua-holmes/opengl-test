@@ -26,6 +26,12 @@ void main() {
     gl_Position = vec4(pos.x, pos.y, pos.z, 1.0);
 }
 "#;
+const FRAG_SHADER: &str = r#"#version 330 core
+out vec4 final_color;
+void main() {
+    final_color = vec4(1.0, 0.5, 0.2, 1.0);
+}
+"#;
 
 fn main() {
     let sdl = Sdl::init(init::InitFlags::EVERYTHING);
@@ -79,43 +85,82 @@ fn main() {
         );
         gl.EnableVertexAttribArray(0);
 
-        let vertex_shader = gl.CreateShader(gl33::GL_VERTEX_SHADER);
-        assert_ne!(vertex_shader, 0);
+        let shader_opts = [
+            ("Vertex", gl33::GL_VERTEX_SHADER, VERT_SHADER),
+            ("Fragment", gl33::GL_FRAGMENT_SHADER, FRAG_SHADER)
+        ];
+        let mut shaders = Vec::with_capacity(shader_opts.len());
 
-        gl.ShaderSource(
-            vertex_shader,
-            1,
-            &(VERT_SHADER.as_bytes().as_ptr().cast()),
-            &(VERT_SHADER.len().try_into().unwrap())
-        );
-        gl.CompileShader(vertex_shader);
+        let shader_program = gl.CreateProgram();
+        for (shader_log_name, shader_type, source_code) in shader_opts {
+            let shader = gl.CreateShader(shader_type);
+            assert_ne!(shader, 0);
+
+            gl.ShaderSource(
+                shader,
+                1,
+                &(source_code.as_bytes().as_ptr().cast()),
+                &(source_code.len().try_into().unwrap())
+            );
+            gl.CompileShader(shader);
+
+            let mut success = 0;
+            gl.GetShaderiv(shader, gl33::GL_COMPILE_STATUS, &mut success);
+
+            if success == 0 {
+                let mut v: Vec<u8> = Vec::with_capacity(1024);
+                let mut log_len = 0;
+                gl.GetShaderInfoLog(
+                    shader,
+                    1024,
+                    &mut log_len,
+                    v.as_mut_ptr().cast()
+                );
+                v.set_len(log_len.try_into().unwrap());
+                panic!("{} Compile Error: {}", shader_log_name, String::from_utf8_lossy(&v));
+            }
+
+            gl.AttachShader(shader_program, shader);
+            shaders.push(shader);
+        } // shader for loop
+        gl.LinkProgram(shader_program);
 
         let mut success = 0;
-        gl.GetShaderiv(vertex_shader, gl33::GL_COMPILE_STATUS, &mut success);
-
+        gl.GetProgramiv(shader_program, gl33::GL_LINK_STATUS, &mut success);
         if success == 0 {
             let mut v: Vec<u8> = Vec::with_capacity(1024);
-            let mut log_len = 0;
-            gl.GetShaderInfoLog(vertex_shader,
+            let mut log_len = 0_i32;
+            gl.GetProgramInfoLog(
+                shader_program,
                 1024,
                 &mut log_len,
                 v.as_mut_ptr().cast()
             );
             v.set_len(log_len.try_into().unwrap());
-            panic!("Vertex Compile Error: {}", String::from_utf8_lossy(&v));
+            panic!("Program Link Error: {}", String::from_utf8_lossy(&v));
         }
-    }
 
-    'main_loop: loop {
-        // handle events this frame
-        while let Some((event, _timestamp)) = sdl.poll_events() {
-            match event {
-                Event::Quit => break 'main_loop,
-                _ => (),
+        for shader in shaders {
+            gl.DeleteShader(shader);
+        }
+        gl.UseProgram(shader_program);
+
+        win.set_swap_interval(video::GlSwapInterval::Vsync).unwrap();
+
+        gl.Clear(gl33::GL_COLOR_BUFFER_BIT);
+
+        'main_loop: loop {
+            // handle events this frame
+            while let Some((event, _timestamp)) = sdl.poll_events() {
+                match event {
+                    Event::Quit => break 'main_loop,
+                    _ => (),
+                }
             }
-        }
-        // now the events are clear
+            // now the events are clear
 
-        // here's where we could change the world state and draw
-    }
+            // here's where we could change the world state and draw
+            gl.Clear(gl33::GL_COLOR_BUFFER_BIT);
+        }
+    } // unsafe
 }
