@@ -161,6 +161,9 @@ fn main() {
 
             // here's where we could change the world state and draw
             gl.Clear(gl33::GL_COLOR_BUFFER_BIT);
+            gl.DrawArrays(gl33::GL_TRIANGLES, 0, 3);
+
+            win.swap_window();
         }
     } // unsafe
 }
