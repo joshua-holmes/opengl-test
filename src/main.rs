@@ -37,7 +37,7 @@ void main() {
 }
 "#);
 
-fn main() -> Result<(), &'static str> {
+fn main() -> Result<(), String> {
     let win = Window::new(WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
     unsafe {

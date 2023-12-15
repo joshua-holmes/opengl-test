@@ -65,7 +65,7 @@ impl Gl {
         }
     }
 
-    fn gen_vertex_arrays(&self, count: i32) -> Result<u32, &str> {
+    fn gen_vertex_arrays(&self, count: i32) -> Result<u32, String> {
         let mut vao = 0;
         unsafe {
             self.gl_fns.GenVertexArrays(count, &mut vao);
@@ -73,7 +73,7 @@ impl Gl {
         if vao != 0 {
             Ok(vao)
         } else {
-            Err("Could not create vertex array")
+            Err("Could not create vertex array".to_string())
         }
     }
 
@@ -81,7 +81,7 @@ impl Gl {
         unsafe { self.gl_fns.BindVertexArray(vao_val) }
     }
 
-    fn gen_buffers(&self, count: i32) -> Result<u32, &str> {
+    fn gen_buffers(&self, count: i32) -> Result<u32, String> {
         let mut vbo = 0;
         unsafe {
             self.gl_fns.GenBuffers(count, &mut vbo);
@@ -89,7 +89,7 @@ impl Gl {
         if vbo != 0 {
             Ok(vbo)
         } else {
-            Err("Could not create buffer object")
+            Err("Could not create buffer object".to_string())
         }
     }
 
@@ -122,10 +122,10 @@ impl Gl {
         unsafe { self.gl_fns.CreateProgram() }
     }
 
-    pub fn create_shader(&self, shader_type: ShaderType) -> Result<u32, &str> {
+    pub fn create_shader(&self, shader_type: ShaderType) -> Result<u32, String> {
         let shader = unsafe { self.gl_fns.CreateShader(shader_type.to_glenum()) };
         if shader == 0 {
-            Err::<u32, _>(format!("Could not create shader of type: {}", shader_type).as_str());
+            Err::<u32, _>(format!("Could not create shader of type: {}", shader_type));
         }
         Ok(shader)
     }
@@ -145,7 +145,7 @@ impl Gl {
         unsafe { self.gl_fns.CompileShader(shader_data) }
     }
 
-    pub fn get_program_iv(&self, shader_program: u32) -> Result<(), &str> {
+    pub fn get_program_iv(&self, shader_program: u32) -> Result<(), String> {
         let mut success = 0;
         unsafe { self.gl_fns.GetProgramiv(shader_program, gl33::GL_LINK_STATUS, &mut success) }
         if success == 0 {
@@ -155,7 +155,7 @@ impl Gl {
         }
     }
 
-    fn get_shader_iv(&self, shader_data: u32) -> Result<(), &str> {
+    fn get_shader_iv(&self, shader_data: u32) -> Result<(), String> {
         let mut success = 0;
         unsafe { self.gl_fns.GetShaderiv(shader_data, gl33::GL_COMPILE_STATUS, &mut success); }
         if success == 0 {
@@ -165,7 +165,7 @@ impl Gl {
         }
     }
 
-    fn get_info_log(&self, log_type: LogType, shader_data: u32) -> &str {
+    fn get_info_log(&self, log_type: LogType, shader_data: u32) -> String {
         let mut v: Vec<u8> = Vec::with_capacity(1024);
         let mut log_len = 0;
         match log_type {
@@ -189,7 +189,7 @@ impl Gl {
         unsafe {
             v.set_len(log_len.try_into().unwrap());
         }
-        String::from_utf8_lossy(&v).to_string().as_str()
+        String::from_utf8_lossy(&v).to_string()
     }
 
     fn attach_shader(&self, shader_program: u32, shader_data: u32) {
@@ -225,7 +225,7 @@ pub struct VertexArray<'a> {
 }
 impl<'a> VertexArray<'a> {
     /// Creates a new vertex array object
-    pub fn new(gl: &Gl) -> Result<Self, &str> {
+    pub fn new(gl: &Gl) -> Result<Self, String> {
         Ok(Self { val: gl.gen_vertex_arrays(1)?, gl })
     }
 
@@ -246,7 +246,7 @@ pub struct Buffer<'a> {
     buffer_type: Option<BufferType>,
 }
 impl<'a> Buffer<'a> {
-    pub fn new(gl: &Gl) -> Result<Self, &str> {
+    pub fn new(gl: &'a Gl) -> Result<Self, String> {
         Ok(Self { val: gl.gen_buffers(1)?, gl, buffer_type: None })
     }
 
@@ -255,23 +255,23 @@ impl<'a> Buffer<'a> {
         self.gl.bind_buffer(b_type, self.val);
     }
 
-    pub fn clear_binding(&self) -> Result<(), &str> {
+    pub fn clear_binding(&self) -> Result<(), String> {
         match self.buffer_type {
             Some(b_type) => {
                 self.gl.bind_buffer(b_type, 0);
                 Ok(())
             }
-            None => Err("Could not clear buffer binding, buffer type not found")
+            None => Err("Could not clear buffer binding, buffer type not found".to_string())
         }
     }
 
-    pub fn buffer_data(&self, data: &[u8], usage: gl33::GLenum) -> Result<(), &str> {
+    pub fn buffer_data(&self, data: &[u8], usage: gl33::GLenum) -> Result<(), String> {
         match self.buffer_type {
             Some(b_type) => {
                 self.gl.buffer_data(b_type, data, usage);
                 Ok(())
             }
-            None => Err("Could not set buffer data, buffer type not found")
+            None => Err("Could not set buffer data, buffer type not found".to_string())
         }
     }
 }
@@ -305,7 +305,7 @@ pub struct Shader<'a> {
     gl: &'a Gl,
 }
 impl<'a> Shader<'a> {
-    pub fn new(shader_type: ShaderType, source_code: String, gl: &'a Gl) -> Result<Self, &'static str> {
+    pub fn new(shader_type: ShaderType, source_code: String, gl: &'a Gl) -> Result<Self, String> {
         let shader_data = gl.create_shader(shader_type)?;
         gl.shader_source(shader_data, 1, source_code);
         Ok(Self {
@@ -319,7 +319,7 @@ impl<'a> Shader<'a> {
         self.gl.compile_shader(self.shader_data);
     }
 
-    pub fn get_shader_iv(&self) -> Result<(), &str> {
+    pub fn get_shader_iv(&self) -> Result<(), String> {
         self.gl.get_shader_iv(self.shader_data)
     }
 
