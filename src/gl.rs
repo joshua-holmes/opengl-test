@@ -24,8 +24,8 @@ pub enum ShaderType {
 impl Display for ShaderType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let name = match self {
-            Vertex => "Vertex",
-            Fragment => "Fragment",
+            ShaderType::Vertex => "Vertex",
+            ShaderType::Fragment => "Fragment",
         };
 
         write!(f, "{}", name)?;
@@ -36,8 +36,8 @@ impl Display for ShaderType {
 impl ShaderType {
     pub fn to_glenum(&self) -> gl33::GLenum {
         match self {
-            Vertex => gl33::GL_VERTEX_SHADER,
-            Fragment => gl33::GL_FRAGMENT_SHADER,
+            ShaderType::Vertex => gl33::GL_VERTEX_SHADER,
+            ShaderType::Fragment => gl33::GL_FRAGMENT_SHADER,
         }
     }
 }
@@ -52,7 +52,7 @@ pub struct Gl {
 }
 
 impl Gl {
-    pub fn new(gl_window_obj: GlWindow) -> Self {
+    pub fn new(gl_window_obj: &GlWindow) -> Self {
         unsafe {
             let gl_fns = GlFns::load_from(&|f_name| gl_window_obj.get_proc_address(f_name)).unwrap();
             Self { gl_fns }
@@ -122,7 +122,7 @@ impl Gl {
         unsafe { self.gl_fns.CreateProgram() }
     }
 
-    pub fn create_shader(&self, shader_type: ShaderType) -> Result<u32, String> {
+    pub fn create_shader(&self, shader_type: &ShaderType) -> Result<u32, String> {
         let shader = unsafe { self.gl_fns.CreateShader(shader_type.to_glenum()) };
         if shader == 0 {
             Err::<u32, _>(format!("Could not create shader of type: {}", shader_type));
@@ -130,7 +130,7 @@ impl Gl {
         Ok(shader)
     }
 
-    pub fn shader_source(&self, shader_data: u32, count: i32, source_code: String) {
+    pub fn shader_source(&self, shader_data: u32, count: i32, source_code: &str) {
         unsafe {
             self.gl_fns.ShaderSource(
                 shader_data,
@@ -225,7 +225,7 @@ pub struct VertexArray<'a> {
 }
 impl<'a> VertexArray<'a> {
     /// Creates a new vertex array object
-    pub fn new(gl: &Gl) -> Result<Self, String> {
+    pub fn new(gl: &'a Gl) -> Result<Self, String> {
         Ok(Self { val: gl.gen_vertex_arrays(1)?, gl })
     }
 
@@ -282,7 +282,7 @@ pub struct ShaderOpts<'a> {
     pub source_code: &'a str,
 }
 impl<'a> ShaderOpts<'a> {
-    pub fn new(shader_type: ShaderType, source_code: &str) -> Self {
+    pub fn new(shader_type: ShaderType, source_code: &'a str) -> Self {
         Self {
             name_str: format!("{}", shader_type),
             shader_type,
@@ -305,8 +305,8 @@ pub struct Shader<'a> {
     gl: &'a Gl,
 }
 impl<'a> Shader<'a> {
-    pub fn new(shader_type: ShaderType, source_code: String, gl: &'a Gl) -> Result<Self, String> {
-        let shader_data = gl.create_shader(shader_type)?;
+    pub fn new(shader_type: ShaderType, source_code: &str, gl: &'a Gl) -> Result<Self, String> {
+        let shader_data = gl.create_shader(&shader_type)?;
         gl.shader_source(shader_data, 1, source_code);
         Ok(Self {
             shader_type,

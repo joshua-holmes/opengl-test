@@ -24,30 +24,30 @@ const VERTICES: [Vertex; 3] = [
 const WINDOW_TITLE: &str = "My triangle";
 const WINDOW_WIDTH: i32 = 800;
 const WINDOW_HEIGHT: i32 = 600;
-const VERT_SHADER: String = String::from(r#"#version 330 core
+const VERT_SHADER: &str = r#"#version 330 core
 layout (location = 0) in vec3 pos;
 void main() {
     gl_Position = vec4(pos.x, pos.y, pos.z, 1.0);
 }
-"#);
-const FRAG_SHADER: String = String::from(r#"#version 330 core
+"#;
+const FRAG_SHADER: &str = r#"#version 330 core
 out vec4 final_color;
 void main() {
     final_color = vec4(1.0, 0.5, 0.2, 1.0);
 }
-"#);
+"#;
 
 fn main() -> Result<(), String> {
     let win = Window::new(WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
     unsafe {
-        let gl = Gl::new(win.gl_window);
+        let gl = Gl::new(&win.gl_window);
         gl.clear_color(0.2, 0.3, 0.3, 1.0);
 
         let vao = VertexArray::new(&gl).unwrap();
         vao.bind();
 
-        let vbo = Buffer::new(&gl).unwrap();
+        let mut vbo = Buffer::new(&gl).unwrap();
         vbo.bind(BufferType::Array);
         vbo.buffer_data(
             bytemuck::cast_slice(&VERTICES),
@@ -69,7 +69,7 @@ fn main() -> Result<(), String> {
             Shader::new(ShaderType::Fragment, FRAG_SHADER, &gl)?,
         ];
 
-        for shader in shaders {
+        for shader in shaders.iter() {
             shader.compile();
             shader.get_shader_iv()?;
             shader.attach(shader_program);
@@ -78,7 +78,7 @@ fn main() -> Result<(), String> {
         gl.link_program(shader_program);
         gl.get_program_iv(shader_program);
 
-        for shader in shaders {
+        for shader in shaders.iter() {
             shader.delete();
         }
 
