@@ -1,15 +1,13 @@
-use std::{error::{Error, self}, fmt::Display};
+use std::fmt::Display;
 
 use gl33::{
     self,
     GlFns,
 };
-use beryllium::{
-    video::GlWindow,
-};
+use beryllium::video::GlWindow;
 
 /// The types of buffer object that you can have.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy)]
 pub enum BufferType {
     /// Array Buffers holds arrays of vertex data for drawing.
     Array = gl33::GL_ARRAY_BUFFER.0 as isize,
@@ -17,6 +15,7 @@ pub enum BufferType {
     ElementArray = gl33::GL_ELEMENT_ARRAY_BUFFER.0 as isize,
 }
 
+#[derive(Clone, Copy)]
 pub enum ShaderType {
     Vertex,
     Fragment,
@@ -42,6 +41,7 @@ impl ShaderType {
     }
 }
 
+#[derive(Clone, Copy)]
 pub enum LogType {
     Shader,
     Program,
@@ -78,7 +78,7 @@ impl Gl {
     }
 
     fn bind_vertex_array(&self, vao_val: u32) {
-        unsafe { self.gl_fns.BindVertexArray(vao_val) }
+        self.gl_fns.BindVertexArray(vao_val);
     }
 
     fn gen_buffers(&self, count: i32) -> Result<u32, String> {
@@ -119,15 +119,16 @@ impl Gl {
     }
 
     pub fn create_program(&self) -> u32 {
-        unsafe { self.gl_fns.CreateProgram() }
+        self.gl_fns.CreateProgram()
     }
 
-    pub fn create_shader(&self, shader_type: &ShaderType) -> Result<u32, String> {
-        let shader = unsafe { self.gl_fns.CreateShader(shader_type.to_glenum()) };
+    pub fn create_shader(&self, shader_type: ShaderType) -> Result<u32, String> {
+        let shader = self.gl_fns.CreateShader(shader_type.to_glenum());
         if shader == 0 {
-            Err::<u32, _>(format!("Could not create shader of type: {}", shader_type));
+            Err(format!("Could not create shader of type: {}", shader_type))
+        } else {
+            Ok(shader)
         }
-        Ok(shader)
     }
 
     pub fn shader_source(&self, shader_data: u32, count: i32, source_code: &str) {
@@ -142,7 +143,7 @@ impl Gl {
     }
 
     fn compile_shader(&self, shader_data: u32) {
-        unsafe { self.gl_fns.CompileShader(shader_data) }
+        self.gl_fns.CompileShader(shader_data);
     }
 
     pub fn get_program_iv(&self, shader_program: u32) -> Result<(), String> {
@@ -193,19 +194,19 @@ impl Gl {
     }
 
     fn attach_shader(&self, shader_program: u32, shader_data: u32) {
-        unsafe { self.gl_fns.AttachShader(shader_program, shader_data) }
+        self.gl_fns.AttachShader(shader_program, shader_data);
     }
 
     pub fn link_program(&self, shader_program: u32) {
-        unsafe { self.gl_fns.LinkProgram(shader_program) }
+        self.gl_fns.LinkProgram(shader_program);
     }
 
     fn delete_shader(&self, shader_data: u32) {
-        unsafe { self.gl_fns.DeleteShader(shader_data) }
+        self.gl_fns.DeleteShader(shader_data);
     }
 
     pub fn use_program(&self, shader_program: u32) {
-        unsafe { self.gl_fns.UseProgram(shader_program) }
+        self.gl_fns.UseProgram(shader_program);
     }
 
     pub fn clear(&self) {
@@ -276,29 +277,6 @@ impl<'a> Buffer<'a> {
     }
 }
 
-pub struct ShaderOpts<'a> {
-    pub name_str: String,
-    pub shader_type: ShaderType,
-    pub source_code: &'a str,
-}
-impl<'a> ShaderOpts<'a> {
-    pub fn new(shader_type: ShaderType, source_code: &'a str) -> Self {
-        Self {
-            name_str: format!("{}", shader_type),
-            shader_type,
-            source_code
-        }
-    }
-
-    pub fn from(iter: impl Iterator<Item = (ShaderType, &'a str)>) -> Vec<Self> {
-        let mut opts = Vec::new();
-        for (shader_type, source_code) in iter {
-            opts.push(Self::new(shader_type, source_code));
-        }
-        opts
-    }
-}
-
 pub struct Shader<'a> {
     shader_type: ShaderType,
     shader_data: u32,
@@ -306,7 +284,7 @@ pub struct Shader<'a> {
 }
 impl<'a> Shader<'a> {
     pub fn new(shader_type: ShaderType, source_code: &str, gl: &'a Gl) -> Result<Self, String> {
-        let shader_data = gl.create_shader(&shader_type)?;
+        let shader_data = gl.create_shader(shader_type)?;
         gl.shader_source(shader_data, 1, source_code);
         Ok(Self {
             shader_type,
