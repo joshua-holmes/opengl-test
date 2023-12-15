@@ -6,12 +6,12 @@ use beryllium::{
     events::Event,
 };
 
-use gl33::{
-    GlFns,
-};
-
 mod gl;
 mod window;
+
+use gl::{Gl, Buffer, BufferType};
+
+use crate::gl::VertexArray;
 
 type Vertex = [f32; 3];
 
@@ -36,25 +36,22 @@ void main() {
 }
 "#;
 
-fn main() {
+fn main() -> Result<(), &'static str> {
     let win = window::create_gl_window_obj(WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
     unsafe {
-        let gl = GlFns::load_from(&|f_name| win.get_proc_address(f_name)).unwrap();
-        gl.ClearColor(0.2, 0.3, 0.3, 1.0);
+        let gl = Gl::new(win);
+        gl.clear_color(0.2, 0.3, 0.3, 1.0);
 
-        let mut vao = 0;
-        gl.GenVertexArrays(1, &mut vao);
-        assert_ne!(vao, 0);
+        let vao = VertexArray::new(&gl).unwrap();
+        vao.bind();
 
-        gl.BindBuffer(gl33::GL_ARRAY_BUFFER, vao);
-
-        gl.BufferData(
-            gl33::GL_ARRAY_BUFFER,
-            mem::size_of_val(&VERTICES) as isize,
-            VERTICES.as_ptr().cast(),
-            gl33::GL_STATIC_DRAW
-        );
+        let vbo = Buffer::new(&gl).unwrap();
+        vbo.bind(BufferType::Array);
+        vbo.buffer_data(
+            bytemuck::cast_slice(&VERTICES),
+            gl33::GL_STATIC_DRAW,
+        )?;
 
         gl.VertexAttribPointer(
             0,
@@ -147,4 +144,6 @@ fn main() {
             win.swap_window();
         }
     } // unsafe
+
+    Ok(())
 }
