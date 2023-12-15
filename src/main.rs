@@ -2,8 +2,6 @@
 use std::mem;
 
 use beryllium::{
-    Sdl,
-    init,
     video,
     events::Event,
 };
@@ -11,6 +9,9 @@ use beryllium::{
 use gl33::{
     GlFns,
 };
+
+mod gl;
+mod window;
 
 type Vertex = [f32; 3];
 
@@ -20,6 +21,8 @@ const VERTICES: [Vertex; 3] = [
     [ 0.0,  0.5, 0.0],
 ];
 const WINDOW_TITLE: &str = "My triangle";
+const WINDOW_WIDTH: i32 = 800;
+const WINDOW_HEIGHT: i32 = 600;
 const VERT_SHADER: &str = r#"#version 330 core
 layout (location = 0) in vec3 pos;
 void main() {
@@ -34,29 +37,7 @@ void main() {
 "#;
 
 fn main() {
-    let sdl = Sdl::init(init::InitFlags::EVERYTHING);
-    
-    sdl.set_gl_context_major_version(3).unwrap();
-    sdl.set_gl_profile(video::GlProfile::Core).unwrap();
-    let mut flags = video::GlContextFlags::default();
-    #[cfg(target_os = "macos")]
-    {
-        flags |= video::GlContextFlags::FORWARD_COMPATIBLE;
-    }
-    if cfg!(debug_asserts) {
-        flags |= video::GlContextFlags::DEBUG;
-    }
-    sdl.set_gl_context_flags(flags).unwrap();
-    let win_args = video::CreateWinArgs {
-        title: WINDOW_TITLE,
-        width: 800,
-        height: 600,
-        allow_high_dpi: true,
-        borderless: false,
-        resizable: false,
-    };
-
-    let win = sdl.create_gl_window(win_args).expect("big sad, no window");
+    let win = window::create_gl_window_obj(WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
     unsafe {
         let gl = GlFns::load_from(&|f_name| win.get_proc_address(f_name)).unwrap();
