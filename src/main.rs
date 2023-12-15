@@ -10,6 +10,7 @@ mod gl;
 mod window;
 
 use gl::{Gl, Buffer, BufferType, ShaderType, Shader};
+use window::Window;
 
 use crate::gl::VertexArray;
 
@@ -37,10 +38,10 @@ void main() {
 "#);
 
 fn main() -> Result<(), &'static str> {
-    let win = window::create_gl_window_obj(WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
+    let win = Window::new(WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
     unsafe {
-        let gl = Gl::new(win);
+        let gl = Gl::new(win.gl_window);
         gl.clear_color(0.2, 0.3, 0.3, 1.0);
 
         let vao = VertexArray::new(&gl).unwrap();
@@ -89,7 +90,7 @@ fn main() -> Result<(), &'static str> {
 
         'main_loop: loop {
             // handle events this frame
-            while let Some((event, _timestamp)) = sdl.poll_events() {
+            while let Some((event, _timestamp)) = win.poll_events() {
                 match event {
                     Event::Quit => break 'main_loop,
                     _ => (),
