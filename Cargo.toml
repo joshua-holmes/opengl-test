@@ -8,7 +8,5 @@ edition = "2021"
 [dependencies]
 bytemuck = "1.14.0"
 gl33 = "0.2.1"
-
-[dev-dependencies]
 beryllium = "0.13.3"
 imagine = "0.5.1"
