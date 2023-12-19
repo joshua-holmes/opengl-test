@@ -16,10 +16,14 @@ use crate::gl::VertexArray;
 
 type Vertex = [f32; 3];
 
-const VERTICES: [Vertex; 3] = [
+const VERTICES: [Vertex; 6] = [
     [-0.5, -0.5, 0.0],
     [ 0.5, -0.5, 0.0],
     [ 0.0,  0.5, 0.0],
+    [-0.5, -0.5, 0.0],
+    [ 0.5, -0.5, 0.0],
+    [ 0.0, -1.0, 0.0],
+
 ];
 const WINDOW_TITLE: &str = "My triangle";
 const WINDOW_WIDTH: i32 = 800;
@@ -99,7 +103,7 @@ fn main() -> Result<(), String> {
 
         // here's where we could change the world state and draw
         gl.clear();
-        gl.draw_arrays(0, 3);
+        gl.draw_arrays(0, VERTICES.len() as i32);
 
         win.swap_window();
     }
