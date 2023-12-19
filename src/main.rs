@@ -1,5 +1,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-use std::mem;
+use std::{mem, fs};
 
 use beryllium::{
     video,
@@ -28,20 +28,16 @@ const VERTICES: [Vertex; 6] = [
 const WINDOW_TITLE: &str = "My triangle";
 const WINDOW_WIDTH: i32 = 800;
 const WINDOW_HEIGHT: i32 = 600;
-const VERT_SHADER: &str = r#"#version 330 core
-layout (location = 0) in vec3 pos;
-void main() {
-    gl_Position = vec4(pos.x, pos.y, pos.z, 1.0);
-}
-"#;
-const FRAG_SHADER: &str = r#"#version 330 core
-out vec4 final_color;
-void main() {
-    final_color = vec4(1.0, 0.5, 0.2, 1.0);
-}
-"#;
 
 fn main() -> Result<(), String> {
+    let mut shader_code = ["shader.frag", "shader.vert"].iter().map(|fname| {
+        let input = fs::read_to_string(format!("./src/shaders/{fname}")).unwrap();
+        input.replace("{WINDOW_HEIGHT}", format!("{}", WINDOW_HEIGHT).as_str())
+    });
+    let frag_shader = shader_code.next().unwrap();
+    let vert_shader = shader_code.next().unwrap();
+
+
     let win = Window::new(WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
     let gl = Gl::new(&win.gl_window);
@@ -68,8 +64,8 @@ fn main() -> Result<(), String> {
 
     let shader_program = gl.create_program();
     let shaders = [
-        Shader::new(ShaderType::Vertex, VERT_SHADER, &gl)?,
-        Shader::new(ShaderType::Fragment, FRAG_SHADER, &gl)?,
+        Shader::new(ShaderType::Vertex, vert_shader, &gl)?,
+        Shader::new(ShaderType::Fragment, frag_shader, &gl)?,
     ];
 
     for shader in shaders.iter() {

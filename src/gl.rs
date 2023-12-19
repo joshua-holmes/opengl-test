@@ -131,7 +131,7 @@ impl Gl {
         }
     }
 
-    pub fn shader_source(&self, shader_data: u32, count: i32, source_code: &str) {
+    pub fn shader_source(&self, shader_data: u32, count: i32, source_code: String) {
         unsafe {
             self.gl_fns.ShaderSource(
                 shader_data,
@@ -283,7 +283,7 @@ pub struct Shader<'a> {
     gl: &'a Gl,
 }
 impl<'a> Shader<'a> {
-    pub fn new(shader_type: ShaderType, source_code: &str, gl: &'a Gl) -> Result<Self, String> {
+    pub fn new(shader_type: ShaderType, source_code: String, gl: &'a Gl) -> Result<Self, String> {
         let shader_data = gl.create_shader(shader_type)?;
         gl.shader_source(shader_data, 1, source_code);
         Ok(Self {
